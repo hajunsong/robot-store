@@ -1,12 +1,14 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2018-11-01T11:09:08
+# Project created by QtCreator 2018-11-02T10:31:18
 #
 #-------------------------------------------------
 
-QT       += core gui widgets network
+QT       += core gui network
 
-TARGET = TcpClient
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+TARGET = MobileRobot
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
@@ -32,8 +34,7 @@ HEADERS += \
     tcpclient.h
 
 FORMS += \
-        mainwindow.ui \
-    mainwindow_copy1.ui
+        mainwindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

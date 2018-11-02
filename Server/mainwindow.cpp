@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->ipAddress->setText("127.0.0.1");
 
     server = new TcpServer;
+    systemState = 0;
 }
 
 MainWindow::~MainWindow()

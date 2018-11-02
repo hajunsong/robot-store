@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "tcpserver.h"
+#include "tcpclient.h"
 
 namespace Ui {
 class MainWindow;
@@ -17,15 +17,18 @@ public:
     ~MainWindow();
 
 public slots:
-    void listenBtnSlot();
-    void disconnectBtnSlot();
-    void sendBtnSlot();
+    void connectBtnSlot();
+    void onConnectServer();
+    void readMessage();
 
 private:
     Ui::MainWindow *ui;
-    TcpServer *server;
-    QString m_ipAddress;
+    TcpClient *client;
+    bool connectState;
+    bool guestState;
     int systemState;
+    void moving();
+    void sendMessage();
 };
 
 #endif // MAINWINDOW_H
