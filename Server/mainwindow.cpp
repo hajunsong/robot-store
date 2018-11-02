@@ -36,5 +36,19 @@ void MainWindow::disconnectBtnSlot()
 
 void MainWindow::sendBtnSlot()
 {
+    QString dataViewTemp;
+    QString str = ui->sendMessage->text();
 
+    dataViewTemp = "Send Data : " + str;
+
+    ui->tcpMessage->append(dataViewTemp);
+
+    if (str.isEmpty() == false){
+        dataViewTemp = "Send Data : " + str;
+
+        ui->tcpMessage->append(dataViewTemp);
+        for(int i = 0; i < server->tcpThread.length(); i++){
+            server->tcpThread[i]->socket->write(str.toUtf8());
+        }
+    }
 }

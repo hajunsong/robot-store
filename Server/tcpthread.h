@@ -11,6 +11,7 @@ public:
     explicit TcpThread(qintptr ID, QObject *parent = nullptr);
 
     void run();
+    QTcpSocket *socket;
 
 signals:
     void error(QTcpSocket::SocketError socketerror);
@@ -20,7 +21,6 @@ public slots:
     void disconnected();
 
 private:
-    QTcpSocket *socket;
     qintptr socketDescriptor;
 };
 

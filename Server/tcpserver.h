@@ -12,6 +12,9 @@ public:
     explicit TcpServer(QObject *parent = nullptr);
     void startServer();
     void setIpAddress(QString address);
+    qintptr socketID[3];
+    quint8 index;
+    QVector<TcpThread*> tcpThread;
 
 signals:
 

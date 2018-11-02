@@ -2,6 +2,7 @@
 
 TcpServer::TcpServer(QObject *parent) : QTcpServer(parent)
 {
+    index = 0;
 }
 
 void TcpServer::setIpAddress(QString address){
@@ -27,9 +28,18 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
 
     TcpThread *thread = new TcpThread(socketDescriptor, this);
 
-    // connect signal/slot
-    // once a thread is not needed, it will be beleted later
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
 
     thread->start();
+
+    socketID[index++] = socketDescriptor;
+    tcpThread.push_back(thread);
+
+//    // connect signal/slot
+//    // once a thread is not needed, it will be beleted later
+//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+
+//    thread->start();
+
+//    tcpThread.push_back(thread);
 }

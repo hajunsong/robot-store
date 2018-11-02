@@ -49,25 +49,15 @@ void MainWindow::onConnectServer()
 
 void MainWindow::sendRequest()
 {
-    unsigned char buffer[256];
-    QString strTemp;
     QString dataViewTemp;
-    QStringList temp;
     QString str = ui->sendMessage->text();
 
     if (str.isEmpty() == false){
-        for(int index = 0; index < str.length(); index++){
-            strTemp = str.at(index);
-            temp.append(str.at(index));
-
-            buffer[index] = strTemp.toInt();
-        }
-
-        dataViewTemp = "Send Data : " + temp.join(", ");
+        dataViewTemp = "Send Data : " + str;
 
         if (m_connectState == true){
             ui->tcpMessage->append(dataViewTemp);
-            client->m_socket->write((const char*)&buffer, str.length());
+            client->m_socket->write(str.toUtf8());
         }
     }
 

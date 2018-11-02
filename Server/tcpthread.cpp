@@ -45,7 +45,7 @@ void TcpThread::readyRead()
     // will write on server side window
     qDebug() << socketDescriptor << " Data in: " << Data;
 
-    socket->write(Data);
+//    socket->write(Data);
 }
 
 void TcpThread::disconnected()
