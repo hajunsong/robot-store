@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "tcpclient.h"
+#include <QTimer>
 
 namespace Ui {
 class MainWindow;
@@ -20,6 +21,7 @@ public slots:
     void connectBtnSlot();
     void onConnectServer();
     void readMessage();
+    void timer_out();
 
 private:
     Ui::MainWindow *ui;
@@ -27,6 +29,7 @@ private:
     bool connectState;
     int systemState;
     void sendMessage();
+    QTimer *timer;
 };
 
 #endif // MAINWINDOW_H

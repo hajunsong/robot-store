@@ -2,22 +2,16 @@
 
 TcpServer::TcpServer(QObject *parent) : QTcpServer(parent)
 {
-    timer = new QTimer(this);
-    timer->setInterval(100);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
-
     systemState = 0;
-
-//    timer->start();
 }
 
-void TcpServer::setIpAddress(QString address){
+void TcpServer::setIpAddress(QString address) {
     m_ipAddress = address;
 }
 
 void TcpServer::startServer()
 {
-    if(!this->listen(QHostAddress(m_ipAddress), 9999))
+    if (!this->listen(QHostAddress(m_ipAddress), 9999))
     {
         qDebug() << "Could not start server";
     }
@@ -32,18 +26,10 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
     // We have a new connection
     qDebug() << QString::number(socketDescriptor) + " Connecting...";
 
-//    TcpThread *thread = new TcpThread(socketDescriptor, this);
-
-//    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-
-//    thread->start();
-
-//    tcpThread.push_back(thread);
-
     socket = new QTcpSocket();
 
     // set the ID
-    if(!socket->setSocketDescriptor(socketDescriptor))
+    if (!socket->setSocketDescriptor(socketDescriptor))
     {
         // something's wrong, we just emit a signal
         emit error(socket->error());
@@ -57,8 +43,10 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
     connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()), Qt::DirectConnection);
     connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()), Qt::DirectConnection);
 
-    if (tcpSocket.length() == 3){
-        timer->start();
+    tcpSocket.push_back(socket);
+    tcpSocketDescriptors.push_back(socketDescriptor);
+    if (tcpSocket.length() == 3) {
+        systemState = 0;
     }
 }
 
@@ -66,33 +54,57 @@ void TcpServer::timer_out()
 {
     QString txData = QString::number(systemState);
 
-    for(int i = 0; i < tcpSocket.length(); i++){
+    for (int i = 0; i < tcpSocket.length(); i++) {
         tcpSocket[i]->write(txData.toUtf8());
     }
     qDebug() << "Transmit Data : " + txData;
-
-    timer->start();
 }
 
 void TcpServer::readyRead()
 {
-    // get the information
-    QByteArray Data = socket->readAll();
+    if (tcpSocket.length() == 3) {
+        QString rxData;
+        for (int i = 0; i < tcpSocket.length(); i++) {
+            QByteArray Data = tcpSocket[i]->readAll();
+            if (Data.length() > 0) {
+                rxData = Data;
 
-    // will write on server side window
-    qDebug() << /*socketDescriptor <<*/ " Data in: " << Data;
+                // will write on server side window
+                qDebug() << "Data in: " << rxData;
 
-    QString rxData = Data;
-    systemState = rxData.toInt();
+                systemState = rxData.toInt();
+            }
+        }
 
-//    socket->write(Data);
+        for (int i = 0; i < tcpSocket.length(); i++) {
+            tcpSocket[i]->write(rxData.toUtf8());
+        }
+
+        qDebug() << "Transmit Data : " + rxData;
+
+        for (int i = 0; i < tcpSocket.length(); i++) {
+            tcpSocket[i]->flush();
+        }
+    }
 }
 
 void TcpServer::disconnected()
 {
-    qDebug() << /*socketDescriptor <<*/ " Disconnected";
+    int deleteIndex = -1;
+    for (int i = 0; i < tcpSocket.length(); i++) {
+        if (tcpSocket[i]->state() == 0) {
+            qDebug() << QString::number(tcpSocketDescriptors[i]) + " Disconnected";
+            tcpSocket[i]->deleteLater();
+            deleteIndex = i;
+        }
+    }
+    if (deleteIndex >= 0 && deleteIndex < 3) {
+        tcpSocketDescriptors.erase(tcpSocketDescriptors.begin() + deleteIndex);
+        tcpSocket.erase(tcpSocket.begin() + deleteIndex);
+    }
 
-    socket->deleteLater();
-    exit(0);
+    if (tcpSocket.length() == 0) {
+        exit(0);
+    }
 }
 

@@ -8,6 +8,7 @@
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QTimer>
 
 #include "tcpclient.h"
 
@@ -27,32 +28,33 @@ public slots:
     void connectBtnSlot();
     void onConnectServer();
     void readMessage();
+    void timer_out();
 
     void startBtnSlot();
-    void listBtnSlot();
-    void cartBtnSlot();
-    void orderBtnSlot();
-    void exitBtnSlot();
     void backBtnSlot();
+    void resetBtnSlot();
+    void itemBtnSlot();
 
 private:
     Ui::MainWindow *ui;
     TcpClient *client;
     bool connectState;
-    QVector<QString> PID;
     int systemState;
     void sendMessage();
-    void sendMessageOrderList();
+    QTimer *timer;
 
     QStackedWidget *stackedWidget;
     QWidget *pageWidget;
     // 1 poage
-    QPushButton *startBtn;
+    QPushButton *startBtn, *resetBtn;
     QLabel *page1Label;
     // 2 page
-    QPushButton *listBtn, *cartBtn, *orderBtn, *exitBtn, *backBtn, *yesBtn, *noBtn;
-    QLabel *page2Label;
+    QPushButton *backBtn, *itemBtn[48];
     QVector<int> pageList;
+    // 3 page
+    QPushButton *itemText;
+    // 4 page
+    QLabel *thankText;
 };
 
 #endif // MAINWINDOW_H

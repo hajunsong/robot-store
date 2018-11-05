@@ -10,9 +10,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     stackedWidget = new QStackedWidget(this);
     stackedWidget->hide();
     stackedWidget->setGeometry(this->rect());
-    quint64 pages = 6;
+    quint64 pages = 4;
     pageWidget = new QWidget[pages];
-    for(quint64 i = 0; i < pages; i++){
+    for (quint64 i = 0; i < pages; i++) {
         pageWidget[i].setGeometry(stackedWidget->rect());
         stackedWidget->addWidget(&pageWidget[i]);
     }
@@ -37,6 +37,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     startBtn->setFont(btnFont);
     startBtn->setObjectName(QStringLiteral("startBtn"));
 
+    resetBtn = new QPushButton(&pageWidget[0]);
+    int resetBtnWidth = 100, resetBtnHeight = 70;
+    resetBtn->setGeometry(pageWidget[0].width() - resetBtnWidth, pageWidget[0].height() - resetBtnHeight - startBtnHeight - 20, resetBtnWidth, resetBtnHeight);
+    resetBtn->setText("Reset");
+    resetBtn->setFont(btnFont);
+    resetBtn->setObjectName(QStringLiteral("resetBtn"));
+
     // 2 page
     backBtn = new QPushButton(&pageWidget[1]);
     backBtn->setText("Back");
@@ -44,37 +51,47 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     backBtn->setObjectName(QStringLiteral("backBtn"));
     int backBtnWidth = 100, backBtnHeight = 50;
     backBtn->setGeometry(pageWidget[0].width() - backBtnWidth, pageWidget[0].height() - backBtnHeight, backBtnWidth, backBtnHeight);
+
     int pageWidth = pageWidget[1].width() - backBtnWidth, pageHeight = pageWidget[1].height();
-    listBtn = new QPushButton(&pageWidget[1]);
-    listBtn->setGeometry(static_cast<int>(pageWidth*0.05), static_cast<int>(pageHeight*0.05), static_cast<int>(pageWidth*0.4), static_cast<int>(pageHeight*0.4));
-    listBtn->setText("Products\nList");
-    btnFont.setPointSize(50);
-    listBtn->setFont(btnFont);
-    listBtn->setObjectName(QStringLiteral("listBtn"));
-    cartBtn = new QPushButton(&pageWidget[1]);
-    cartBtn->setGeometry(static_cast<int>(pageWidth*0.55), static_cast<int>(pageHeight*0.05), static_cast<int>(pageWidth*0.4), static_cast<int>(pageHeight*0.4));
-    cartBtn->setText("Shopping\nCart");
-    cartBtn->setFont(btnFont);
-    cartBtn->setObjectName(QStringLiteral("cartBtn"));
-    orderBtn = new QPushButton(&pageWidget[1]);
-    orderBtn->setGeometry(static_cast<int>(pageWidth*0.05), static_cast<int>(pageHeight*0.55), static_cast<int>(pageWidth*0.4), static_cast<int>(pageHeight*0.4));
-    orderBtn->setText("Products\nOrder");
-    orderBtn->setFont(btnFont);
-    orderBtn->setObjectName(QStringLiteral("orderBtn"));
-    exitBtn = new QPushButton(&pageWidget[1]);
-    exitBtn->setGeometry(static_cast<int>(pageWidth*0.55), static_cast<int>(pageHeight*0.55), static_cast<int>(pageWidth*0.4), static_cast<int>(pageHeight*0.4));
-    exitBtn->setText("Exit\nStore");
-    exitBtn->setFont(btnFont);
-    exitBtn->setObjectName(QStringLiteral("exitBtn"));
+    btnFont.setPointSize(15);
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < 8; j++) {
+            itemBtn[i * 8 + j] = new QPushButton(&pageWidget[1]);
+            itemBtn[i * 8 + j]->setGeometry(static_cast<int>(pageWidth*(0.05 + j*0.12)), static_cast<int>(pageHeight*(0.05 + i*0.15)), static_cast<int>(pageWidth / 12), static_cast<int>(pageHeight / 8));
+            QString itemText = "Item " + QString::number(i*8+j + 1);
+            itemBtn[i * 8 + j]->setText(itemText);
+            itemBtn[i * 8 + j]->setFont(btnFont);
+            itemBtn[i * 8 + j]->setObjectName(itemText);
+            connect(itemBtn[i * 8 + j], SIGNAL(clicked()), this, SLOT(itemBtnSlot()));
+        }
+    }
+
+    // 3 page
+    itemText = new QPushButton(&pageWidget[2]);
+    QFont page3LabelFont;
+    page3LabelFont.setPointSize(50);
+    page3LabelFont.setBold(true);
+    itemText->setFont(page3LabelFont);
+    itemText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
+//    itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    itemText->setAutoFillBackground(true);
+    QPalette palette = itemText->palette();
+    palette.setColor(QPalette::Button, QColor(Qt::white));
+    itemText->setPalette(palette);
+
+    // 4 page
+    thankText = new QLabel(&pageWidget[3]);
+    QFont page4LabelFont;
+    page4LabelFont.setPointSize(50);
+    page4LabelFont.setBold(true);
+    thankText->setFont(page4LabelFont);
+    thankText->setText("Thank you !!\n!^^!");
+    thankText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
+    thankText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
     connect(startBtn, SIGNAL(clicked()), this, SLOT(startBtnSlot()));
-    connect(listBtn, SIGNAL(clicked()), this, SLOT(listBtnSlot()));
-    connect(cartBtn, SIGNAL(clicked()), this, SLOT(cartBtnSlot()));
-    connect(orderBtn, SIGNAL(clicked()), this, SLOT(orderBtnSlot()));
-    connect(exitBtn, SIGNAL(clicked()), this, SLOT(exitBtnSlot()));
     connect(backBtn, SIGNAL(clicked()), this, SLOT(backBtnSlot()));
-
-    pageList.push_back(stackedWidget->currentIndex());
+    connect(resetBtn, SIGNAL(clicked()), this, SLOT(resetBtnSlot()));
 
     ui->ipAddress->setText("127.0.0.1");
 
@@ -85,12 +102,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(client->socket, SIGNAL(connected()), this, SLOT(onConnectServer()));
     connect(client->socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
 
+    timer = new QTimer(this);
+    timer->setInterval(3000);
+    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
+
     systemState = 0;
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
+MainWindow::~MainWindow() {
     delete startBtn;
     delete[] pageWidget;
     delete stackedWidget;
@@ -98,12 +117,13 @@ MainWindow::~MainWindow()
 
 void MainWindow::connectBtnSlot()
 {
-    if (connectState){
+    if (connectState) {
         client->socket->close();
         ui->tcpMessage->append("Close ...");
         connectState = false;
+        ui->connectBtn->setText("Connect");
     }
-    else{
+    else {
         client->setIpAddress(ui->ipAddress->text());
         emit client->connectToServer();
     }
@@ -114,6 +134,7 @@ void MainWindow::onConnectServer()
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
     client->socket->write(QString::number(systemState).toUtf8());
+    ui->connectBtn->setText("Disconnect");
 
     ui->centralWidget->hide();
     stackedWidget->setHidden(false);
@@ -128,53 +149,56 @@ void MainWindow::readMessage()
     rxMessage = "Receive Data : " + rxData;
     ui->tcpMessage->append(rxMessage);
 
-    if (systemState == 3){
+    if (systemState == 3) {
         stackedWidget->setVisible(true);
-        backBtn->setVisible(true);
+        //backBtn->setVisible(true);
         systemState = 4;
     }
+    else if(systemState == 7){
+        stackedWidget->setCurrentIndex(3);
+        timer->start();
+    }
+}
+
+void MainWindow::timer_out(){
+    stackedWidget->setCurrentIndex(1);
+    timer->stop();
 }
 
 void MainWindow::startBtnSlot()
 {
     stackedWidget->setCurrentIndex(1);
     systemState = 1;
-    backBtn->setVisible(false);
+    //backBtn->setVisible(false);
+    pageList.push_back(stackedWidget->currentIndex());
 
     sendMessage();
 }
 
-void MainWindow::listBtnSlot()
+void MainWindow::resetBtnSlot()
 {
-
+    ui->centralWidget->setHidden(false);
+    stackedWidget->setHidden(true);
 }
 
-void MainWindow::cartBtnSlot()
+void MainWindow::itemBtnSlot()
 {
-
-}
-
-void MainWindow::orderBtnSlot()
-{
-    systemState = 5;
-    sendMessage();
-    sendMessageOrderList();
-}
-
-void MainWindow::exitBtnSlot()
-{
-    pageList.clear();
-    systemState = 0;
-    sendMessage();
-    stackedWidget->setCurrentIndex(0);
+    if (systemState == 4 || systemState == 7){
+        systemState = 5;
+        QString objName = sender()->objectName();
+        for(int i = 0; i < 48; i++){
+            if (objName.compare(itemBtn[i]->objectName()) == 0){
+                systemState = systemState*100 + (i +1);
+                sendMessage();
+            }
+        }
+        stackedWidget->setCurrentIndex(2);
+        itemText->setText(objName);
+    }
 }
 
 void MainWindow::backBtnSlot()
 {
-    if (systemState == 4){
-        stackedWidget->setCurrentIndex(pageList.back());
-        pageList.pop_back();
-    }
 }
 
 void MainWindow::sendMessage()
@@ -184,17 +208,3 @@ void MainWindow::sendMessage()
     QString txMessage = "Transmit Data : " + txData;
     ui->tcpMessage->append(txMessage);
 }
-
-void MainWindow::sendMessageOrderList()
-{
-    QString txData = "";
-    if (!PID.empty()) {
-        for(int i = 0; i < PID.length(); i++){
-            txData += "," + PID[i];
-        }
-        client->socket->write(txData.toUtf8());
-        QString txMessage = "Transmit Data : " + txData;
-        ui->tcpMessage->append(txMessage);
-    }
-}
-

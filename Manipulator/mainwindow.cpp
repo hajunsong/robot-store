@@ -17,6 +17,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(client->socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
 
     systemState = 0;
+
+    timer = new QTimer(this);
+    timer->setInterval(10000);
+    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
 }
 
 MainWindow::~MainWindow()
@@ -31,11 +35,11 @@ void MainWindow::connectBtnSlot()
         client->socket->close();
         ui->tcpMessage->append("Close ...");
         connectState = false;
+        ui->connectBtn->setText("Connect");
     }
     else{
         client->setIpAddress(ui->ipAddress->text());
         emit client->connectToServer();
-        ui->connectBtn->setText("Connect");
     }
 }
 
@@ -44,7 +48,13 @@ void MainWindow::onConnectServer()
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
     client->socket->write(QString::number(systemState).toUtf8());
-    ui->connectBtn->setText("Disconnec");
+    ui->connectBtn->setText("Disconnect");
+}
+
+void MainWindow::timer_out(){
+    systemState = 7;
+    sendMessage();
+    timer->stop();
 }
 
 void MainWindow::readMessage()
@@ -56,14 +66,9 @@ void MainWindow::readMessage()
     ui->tcpMessage->append(rxMessage);
 
     systemState = rxData.toInt();
-    if (systemState == 5){
+    if (systemState/100 == 5){
         systemState = 6;
-        sendMessage();
-        for(int i = 0, j = 0; i < 100000; i++){
-            j++;
-        }
-        systemState = 7;
-        sendMessage();
+        timer->start();
     }
 }
 

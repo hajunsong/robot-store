@@ -28,11 +28,10 @@ protected:
 private:
     QString m_ipAddress;
     int systemState;
-    void sendMessage();
     QTimer *timer;
     QTcpSocket *socket;
     QVector<QTcpSocket*> tcpSocket;
-
+    QVector<qintptr> tcpSocketDescriptors;
 };
 
 #endif // TCPSERVER_H

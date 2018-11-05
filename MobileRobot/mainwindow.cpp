@@ -18,6 +18,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     guestState = false;
     systemState = 0;
+
+    timer = new QTimer(this);
+    timer->setInterval(1000);
+    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
+}
+
+void MainWindow::timer_out(){
+    sendMessage();
+    timer->stop();
 }
 
 MainWindow::~MainWindow()
@@ -32,11 +41,11 @@ void MainWindow::connectBtnSlot()
         client->socket->close();
         ui->tcpMessage->append("Close ...");
         connectState = false;
+        ui->connectBtn->setText("Connect");
     }
     else{
         client->setIpAddress(ui->ipAddress->text());
         emit client->connectToServer();
-        ui->connectBtn->setText("Connect");
     }
 }
 
@@ -60,8 +69,8 @@ void MainWindow::readMessage()
     if (systemState == 1){
         ui->guestCbox->setChecked(true);
         systemState = 2;
-        sendMessage();
         moving();
+        timer->start();
     }
     else if(systemState == 0){
         // move autonomous
@@ -73,15 +82,14 @@ void MainWindow::moving(){
     for(int i = 0, j = 0; i < 10000000; i++){
         j++;
     }
-
     systemState = 3;
-    sendMessage();
 }
 
 void MainWindow::sendMessage()
 {
-    QString txData = QString::number(systemState);
-    client->socket->write(txData.toUtf8());
-    QString txMessage = "Transmit Data : " + txData;
+    QByteArray txArray;
+    txArray.setNum(systemState);
+    client->socket->write(txArray);
+    QString txMessage = "Transmit Data : " + QString::number(systemState);
     ui->tcpMessage->append(txMessage);
 }
