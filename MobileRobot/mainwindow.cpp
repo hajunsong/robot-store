@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     systemState = 0;
 
     timer = new QTimer(this);
-    timer->setInterval(1000);
+    timer->setInterval(3000);
     connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
 }
 

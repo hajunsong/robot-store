@@ -43,10 +43,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     resetBtn->setText("Reset");
     resetBtn->setFont(btnFont);
     resetBtn->setObjectName(QStringLiteral("resetBtn"));
+    resetBtn->hide();
 
     // 2 page
     backBtn = new QPushButton(&pageWidget[1]);
-    backBtn->setText("Back");
+    backBtn->setText("Quit");
     backBtn->setFont(btnFont);
     backBtn->setObjectName(QStringLiteral("backBtn"));
     int backBtnWidth = 100, backBtnHeight = 50;
@@ -66,18 +67,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
     }
 
+    itemLabel = new QLabel(&pageWidget[1]);
+    itemLabel->setText("Please Wait....");
+    itemLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    itemLabel->setGeometry(0, 0, static_cast<int>(pageWidth), static_cast<int>(pageHeight));
+    QFont font;
+    font.setPointSize(50);
+    font.setBold(true);
+    itemLabel->setFont(font);
+    QPalette palette;
+    palette.setColor(QPalette::Window, Qt::transparent);
+    itemLabel->setAutoFillBackground(true);
+    itemLabel->setPalette(palette);
+    itemLabel->hide();
+
     // 3 page
-    itemText = new QPushButton(&pageWidget[2]);
+    itemText = new QLabel(&pageWidget[2]);
     QFont page3LabelFont;
     page3LabelFont.setPointSize(50);
     page3LabelFont.setBold(true);
     itemText->setFont(page3LabelFont);
     itemText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
-//    itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
-    itemText->setAutoFillBackground(true);
-    QPalette palette = itemText->palette();
-    palette.setColor(QPalette::Button, QColor(Qt::white));
-    itemText->setPalette(palette);
+    itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
     // 4 page
     thankText = new QLabel(&pageWidget[3]);
@@ -151,8 +162,8 @@ void MainWindow::readMessage()
 
     if (systemState == 3) {
         stackedWidget->setVisible(true);
-        //backBtn->setVisible(true);
         systemState = 4;
+        itemLabel->hide();
     }
     else if(systemState == 7){
         stackedWidget->setCurrentIndex(3);
@@ -169,7 +180,6 @@ void MainWindow::startBtnSlot()
 {
     stackedWidget->setCurrentIndex(1);
     systemState = 1;
-    //backBtn->setVisible(false);
     pageList.push_back(stackedWidget->currentIndex());
 
     sendMessage();
@@ -195,10 +205,14 @@ void MainWindow::itemBtnSlot()
         stackedWidget->setCurrentIndex(2);
         itemText->setText(objName);
     }
+    else if (systemState == 1){
+        itemLabel->setVisible(true);
+    }
 }
 
 void MainWindow::backBtnSlot()
 {
+    stackedWidget->setCurrentIndex(0);
 }
 
 void MainWindow::sendMessage()

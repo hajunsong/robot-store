@@ -8,6 +8,7 @@
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
+#include <QPainter>
 #include <QTimer>
 
 #include "tcpclient.h"
@@ -51,8 +52,9 @@ private:
     // 2 page
     QPushButton *backBtn, *itemBtn[48];
     QVector<int> pageList;
+    QLabel *itemLabel;
     // 3 page
-    QPushButton *itemText;
+    QLabel *itemText;
     // 4 page
     QLabel *thankText;
 };
