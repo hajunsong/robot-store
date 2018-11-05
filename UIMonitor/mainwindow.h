@@ -9,6 +9,7 @@
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QPainter>
+#include <QPicture>
 #include <QTimer>
 
 #include "tcpclient.h"

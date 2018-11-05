@@ -60,10 +60,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             itemBtn[i * 8 + j] = new QPushButton(&pageWidget[1]);
             itemBtn[i * 8 + j]->setGeometry(static_cast<int>(pageWidth*(0.05 + j*0.12)), static_cast<int>(pageHeight*(0.05 + i*0.15)), static_cast<int>(pageWidth / 12), static_cast<int>(pageHeight / 8));
             QString itemText = "Item " + QString::number(i*8+j + 1);
-            itemBtn[i * 8 + j]->setText(itemText);
             itemBtn[i * 8 + j]->setFont(btnFont);
             itemBtn[i * 8 + j]->setObjectName(itemText);
             connect(itemBtn[i * 8 + j], SIGNAL(clicked()), this, SLOT(itemBtnSlot()));
+            if (i == 0 && j == 0){
+                QImage *image = new QImage();
+                QPixmap *buffer = new QPixmap();
+                if(image->load("../tobot.jpg"))
+                {
+                    *buffer = QPixmap::fromImage(*image);
+                    *buffer = buffer->scaled(image->width(),image->height());
+                }
+                else
+                {
+                    qDebug() << "Image load Error";
+                }
+                itemBtn[i * 8 + j]->setAutoFillBackground(true);
+                QPalette palette = itemBtn[i * 8 + j]->palette();
+                palette.setColor(QPalette::Button,QColor(82,110,166));
+                itemBtn[i * 8 + j]->setPalette(palette);
+                itemBtn[i * 8 + j]->setIcon(QIcon("../tobot.jpg"));
+                itemBtn[i * 8 + j]->setIconSize(QSize(itemBtn[i * 8 + j]->width(),itemBtn[i * 8 + j]->height()));
+            }
+            else{
+                itemBtn[i * 8 + j]->setText(itemText);
+            }
         }
     }
 
@@ -204,6 +225,18 @@ void MainWindow::itemBtnSlot()
         }
         stackedWidget->setCurrentIndex(2);
         itemText->setText(objName);
+        QImage *image = new QImage();
+        QPixmap *buffer = new QPixmap();
+        if(image->load("../tobot.jpg"))
+        {
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(image->width(),image->height());
+        }
+        else
+        {
+            qDebug() << "Image load Error";
+        }
+        itemText->setPixmap(*buffer);
     }
     else if (systemState == 1){
         itemLabel->setVisible(true);
@@ -213,6 +246,8 @@ void MainWindow::itemBtnSlot()
 void MainWindow::backBtnSlot()
 {
     stackedWidget->setCurrentIndex(0);
+    systemState = 0;
+    sendMessage();
 }
 
 void MainWindow::sendMessage()
