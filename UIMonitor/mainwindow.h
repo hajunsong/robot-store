@@ -44,6 +44,7 @@ private:
     int systemState;
     void sendMessage();
     QTimer *timer;
+    QString imagePath;
 
     QStackedWidget *stackedWidget;
     QWidget *pageWidget;
@@ -55,7 +56,7 @@ private:
     QVector<int> pageList;
     QLabel *itemLabel;
     // 3 page
-    QLabel *itemText;
+    QLabel *itemText, *waitText;
     // 4 page
     QLabel *thankText;
 };

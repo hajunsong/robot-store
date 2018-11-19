@@ -47,7 +47,7 @@ void MainWindow::onConnectServer()
 {
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
-    client->socket->write(QString::number(systemState).toUtf8());
+    client->socket->write(QString::number(102).toUtf8());
     ui->connectBtn->setText("Disconnect");
 }
 
@@ -65,17 +65,28 @@ void MainWindow::readMessage()
     rxMessage = "Receive Data : " + rxData;
     ui->tcpMessage->append(rxMessage);
 
-    systemState = rxData.toInt();
-    if (systemState/100 == 5){
-        systemState = 6;
+    qDebug() << rxData.length();
+    if (rxData.length() < 2){
+        systemState = rxData.toInt();
+    }
+    else{
         timer->start();
     }
 }
 
 void MainWindow::sendMessage()
 {
-    QString txData = QString::number(systemState);
-    client->socket->write(txData.toUtf8());
+//    QString txData = QString::number(systemState);
+
+    QByteArray txData;
+    txData.append(QByteArray::fromRawData("\x03\x06", 2));
+    txData.append(QByteArray::fromRawData("\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05", 12));
+    txData.append(QByteArray::fromRawData("\x02\x05", 2));
+    txData.append(QByteArray::fromRawData("\x03\x05\x03\x05\x03\x05", 6));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
     QString txMessage = "Transmit Data : " + txData;
     ui->tcpMessage->append(txMessage);
 }

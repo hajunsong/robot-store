@@ -2,7 +2,6 @@
 #define TCPSERVER_H
 
 #include <QTcpServer>
-#include <QTimer>
 #include <QDebug>
 #include <QTcpSocket>
 
@@ -18,7 +17,6 @@ signals:
     void error(QTcpSocket::SocketError socketerror);
 
 public slots:
-    void timer_out();
     void readyRead();
     void disconnected();
 
@@ -28,10 +26,11 @@ protected:
 private:
     QString m_ipAddress;
     int systemState;
-    QTimer *timer;
     QTcpSocket *socket;
     QVector<QTcpSocket*> tcpSocket;
+    QVector<int> tcpSocketID;
     QVector<qintptr> tcpSocketDescriptors;
+    int productNumber;
 };
 
 #endif // TCPSERVER_H

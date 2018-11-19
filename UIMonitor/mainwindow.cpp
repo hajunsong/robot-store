@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     int pageWidth = pageWidget[1].width() - backBtnWidth, pageHeight = pageWidget[1].height();
     btnFont.setPointSize(15);
+    imagePath = "./images/tobot.jpg";
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 8; j++) {
             itemBtn[i * 8 + j] = new QPushButton(&pageWidget[1]);
@@ -66,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             if (i == 0 && j == 0){
                 QImage *image = new QImage();
                 QPixmap *buffer = new QPixmap();
-                if(image->load("../tobot.jpg"))
+                if(image->load(imagePath))
                 {
                     *buffer = QPixmap::fromImage(*image);
                     *buffer = buffer->scaled(image->width(),image->height());
@@ -79,7 +80,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 QPalette palette = itemBtn[i * 8 + j]->palette();
                 palette.setColor(QPalette::Button,QColor(82,110,166));
                 itemBtn[i * 8 + j]->setPalette(palette);
-                itemBtn[i * 8 + j]->setIcon(QIcon("../tobot.jpg"));
+                itemBtn[i * 8 + j]->setIcon(QIcon(imagePath));
                 itemBtn[i * 8 + j]->setIconSize(QSize(itemBtn[i * 8 + j]->width(),itemBtn[i * 8 + j]->height()));
             }
             else{
@@ -89,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     itemLabel = new QLabel(&pageWidget[1]);
-    itemLabel->setText("Please Wait....");
+    itemLabel->setText("The clerk robot is coming...\nPlease Wait....");
     itemLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
     itemLabel->setGeometry(0, 0, static_cast<int>(pageWidth), static_cast<int>(pageHeight));
     QFont font;
@@ -110,6 +111,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     itemText->setFont(page3LabelFont);
     itemText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
     itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+    waitText = new QLabel(&pageWidget[2]);
+    page3LabelFont.setPointSize(30);
+    waitText->setFont(page3LabelFont);
+    waitText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.8), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.2));
+    waitText->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    waitText->setText("Robot is taking goods out.\nPlease wait...");
 
     // 4 page
     thankText = new QLabel(&pageWidget[3]);
@@ -165,7 +173,7 @@ void MainWindow::onConnectServer()
 {
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
-    client->socket->write(QString::number(systemState).toUtf8());
+    client->socket->write(QString::number(100).toUtf8());
     ui->connectBtn->setText("Disconnect");
 
     ui->centralWidget->hide();
@@ -225,18 +233,20 @@ void MainWindow::itemBtnSlot()
         }
         stackedWidget->setCurrentIndex(2);
         itemText->setText(objName);
-        QImage *image = new QImage();
-        QPixmap *buffer = new QPixmap();
-        if(image->load("../tobot.jpg"))
-        {
-            *buffer = QPixmap::fromImage(*image);
-            *buffer = buffer->scaled(image->width(),image->height());
+        if (objName.compare(itemBtn[0]->objectName()) == 0){
+            QImage *image = new QImage();
+            QPixmap *buffer = new QPixmap();
+            if(image->load(imagePath))
+            {
+                *buffer = QPixmap::fromImage(*image);
+                *buffer = buffer->scaled(image->width(),image->height());
+            }
+            else
+            {
+                qDebug() << "Image load Error";
+            }
+            itemText->setPixmap(*buffer);
         }
-        else
-        {
-            qDebug() << "Image load Error";
-        }
-        itemText->setPixmap(*buffer);
     }
     else if (systemState == 1){
         itemLabel->setVisible(true);
