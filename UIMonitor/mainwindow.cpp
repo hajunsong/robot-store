@@ -7,6 +7,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(1280, 720);
     this->setWindowTitle("UI Monitor");
 
+    ui->ipAddress->setText("127.0.0.1");
+
+    client = new TcpClient(this);
+
+    connect(ui->connectBtn, SIGNAL(clicked()), this, SLOT(connectBtnSlot()));
+    connect(client->socket, SIGNAL(connected()), this, SLOT(onConnectServer()));
+    connect(client->socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
+
+    timer = new QTimer(this);
+    timer->setInterval(3000);
+    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
+
     stackedWidget = new QStackedWidget(this);
     stackedWidget->hide();
     stackedWidget->setGeometry(this->rect());
@@ -18,82 +30,116 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     }
 
     // 1 page
-    page1Label = new QLabel(&pageWidget[0]);
-    page1Label->setGeometry(pageWidget[0].rect());
-    page1Label->setText("Welcome to Robot Store\n!^^!");
-    QFont page1LabelFont;
-    page1LabelFont.setPointSize(50);
-    page1LabelFont.setBold(true);
-    page1Label->setFont(page1LabelFont);
-    page1Label->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    startBtn = new QClickLabel(&pageWidget[startPage]);
+//    int startBtnWidth = 160, startBtnHeight = 160;
+    startBtn->setGeometry(pageWidget[startPage].rect());
+    startBtn->setObjectName(QStringLiteral("startBtn"));
+    QImage *startImage = new QImage();
+    QPixmap *startImageBuffer = new QPixmap();
+    if (startImage->load(imagePath + startIcon[0])){
+        *startImageBuffer = QPixmap::fromImage(*startImage);
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+    }
+    startBtn->setPixmap(*startImageBuffer);
+    startBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
-    startBtn = new QPushButton(&pageWidget[0]);
-    int startBtnWidth = 100, startBtnHeight = 70;
-    startBtn->setGeometry(pageWidget[0].width() - startBtnWidth, pageWidget[0].height() - startBtnHeight, startBtnWidth, startBtnHeight);
-    startBtn->setText("Start\nShopping");
+    resetBtn = new QPushButton(&pageWidget[startPage]);
+    int resetBtnWidth = 100, resetBtnHeight = 70;
+    resetBtn->setGeometry(pageWidget[startPage].width() - resetBtnWidth, pageWidget[0].height() - resetBtnHeight - resetBtnWidth - 20, resetBtnWidth, resetBtnHeight);
+    resetBtn->setText("Reset");
     QFont btnFont;
     btnFont.setPointSize(15);
     btnFont.setBold(true);
-    startBtn->setFont(btnFont);
-    startBtn->setObjectName(QStringLiteral("startBtn"));
-
-    resetBtn = new QPushButton(&pageWidget[0]);
-    int resetBtnWidth = 100, resetBtnHeight = 70;
-    resetBtn->setGeometry(pageWidget[0].width() - resetBtnWidth, pageWidget[0].height() - resetBtnHeight - startBtnHeight - 20, resetBtnWidth, resetBtnHeight);
-    resetBtn->setText("Reset");
     resetBtn->setFont(btnFont);
     resetBtn->setObjectName(QStringLiteral("resetBtn"));
     resetBtn->hide();
 
     // 2 page
-    backBtn = new QPushButton(&pageWidget[1]);
+    backBtn = new QPushButton(&pageWidget[selectPage]);
     backBtn->setText("Quit");
     backBtn->setFont(btnFont);
     backBtn->setObjectName(QStringLiteral("backBtn"));
     int backBtnWidth = 100, backBtnHeight = 50;
-    backBtn->setGeometry(pageWidget[0].width() - backBtnWidth, pageWidget[0].height() - backBtnHeight, backBtnWidth, backBtnHeight);
+    backBtn->setGeometry(pageWidget[selectPage].width() - backBtnWidth, pageWidget[selectPage].height() - backBtnHeight, backBtnWidth, backBtnHeight);
 
-    int pageWidth = pageWidget[1].width() - backBtnWidth, pageHeight = pageWidget[1].height();
-    btnFont.setPointSize(15);
-    imagePath = "./images/tobot.jpg";
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 8; j++) {
-            itemBtn[i * 8 + j] = new QPushButton(&pageWidget[1]);
-            itemBtn[i * 8 + j]->setGeometry(static_cast<int>(pageWidth*(0.05 + j*0.12)), static_cast<int>(pageHeight*(0.05 + i*0.15)), static_cast<int>(pageWidth / 12), static_cast<int>(pageHeight / 8));
-            QString itemText = "Item " + QString::number(i*8+j + 1);
-            itemBtn[i * 8 + j]->setFont(btnFont);
-            itemBtn[i * 8 + j]->setObjectName(itemText);
-            connect(itemBtn[i * 8 + j], SIGNAL(clicked()), this, SLOT(itemBtnSlot()));
-            if (i == 0 && j == 0){
-                QImage *image = new QImage();
-                QPixmap *buffer = new QPixmap();
-                if(image->load(imagePath))
-                {
-                    *buffer = QPixmap::fromImage(*image);
-                    *buffer = buffer->scaled(image->width(),image->height());
-                }
-                else
-                {
-                    qDebug() << "Image load Error";
-                }
-                itemBtn[i * 8 + j]->setAutoFillBackground(true);
-                QPalette palette = itemBtn[i * 8 + j]->palette();
-                palette.setColor(QPalette::Button,QColor(82,110,166));
-                itemBtn[i * 8 + j]->setPalette(palette);
-                itemBtn[i * 8 + j]->setIcon(QIcon(imagePath));
-                itemBtn[i * 8 + j]->setIconSize(QSize(itemBtn[i * 8 + j]->width(),itemBtn[i * 8 + j]->height()));
-            }
-            else{
-                itemBtn[i * 8 + j]->setText(itemText);
-            }
+    int pageWidth = pageWidget[selectPage].width() - backBtnWidth, pageHeight = pageWidget[selectPage].height();
+    QImage *colorImage = new QImage();
+    QPixmap *colorImageBuffer = new QPixmap();
+    QString text;
+
+    for(int i = 0; i < 6; i++){
+        colorBtn[i] = new QClickLabel(&pageWidget[selectPage]);
+        colorBtn[i]->setGeometry(static_cast<int>(pageWidth*(0.055 + i*0.15)), static_cast<int>(pageHeight/3*0.3),
+                           static_cast<int>(pageWidth / 6), static_cast<int>(pageHeight / 3));
+
+        text = "Color " + QString::number(i + 1);
+        colorBtn[i]->setObjectName(text);
+
+        if (colorImage->load(imagePath + colorIcon[i])){
+            *colorImageBuffer = QPixmap::fromImage(*colorImage);
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
         }
+        colorBtn[i]->setPixmap(*colorImageBuffer);
+        colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+        connect(colorBtn[i], SIGNAL(mousePressed()), this, SLOT(colorBtnPressedSlot()));
+        connect(colorBtn[i], SIGNAL(mouseReleased()), this, SLOT(colorBtnReleasedSlot()));
     }
 
-    itemLabel = new QLabel(&pageWidget[1]);
+    for(int i = 0; i < 7; i++){
+        patternBtn[i] = new QClickLabel(&pageWidget[selectPage]);
+        patternBtn[i]->setGeometry(static_cast<int>(pageWidth*(0.05 + i*0.13)), static_cast<int>(pageHeight/3*1.2),
+                           static_cast<int>(pageWidth / 7), static_cast<int>(pageHeight / 3));
+
+        text = "Pattern " + QString::number(i + 1);
+        patternBtn[i]->setObjectName(text);
+
+        if (colorImage->load(imagePath + patternIcon[i])){
+            *colorImageBuffer = QPixmap::fromImage(*colorImage);
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+        }
+        patternBtn[i]->setPixmap(*colorImageBuffer);
+        patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+        connect(patternBtn[i], SIGNAL(mousePressed()), this, SLOT(patternBtnPressedSlot()));
+        connect(patternBtn[i], SIGNAL(mouseReleased()), this, SLOT(patternBtnReleasedSlot()));
+    }
+
+    QWidget *layout = new QWidget(&pageWidget[selectPage]);
+    layout->setGeometry(0, pageHeight/5*4, pageWidth, pageHeight/5);
+    orderBtn = new QClickLabel(layout);
+    int layoutWidth = layout->width();
+    int layoutHeight = layout->height();
+    orderBtn->setGeometry(layoutWidth/3, 0, layoutWidth/3, layoutHeight/5*4);
+    QFont font;
+    font.setPointSize(25);
+    font.setBold(true);
+    orderBtn->setFont(font);
+    orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    orderBtn->setText("");
+
+    QImage *image = new QImage();
+    QPixmap *buffer = new QPixmap();
+    if (image->load(imagePath + orderIcon[2])){
+        *buffer = QPixmap::fromImage(*image);
+        *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
+    }
+    orderBtn->setPixmap(*buffer);
+    orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+    orderText = new QClickLabel(layout);
+    orderText->setGeometry(layoutWidth/3, 0, layoutWidth/3, layoutHeight/5*4);
+    orderText->setFont(font);
+    orderText->setText("Choose among these\nfavorite color & pattern");
+    orderText->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+    connect(orderText, SIGNAL(mousePressed()), this, SLOT(orderBtnPressedSlot()));
+    connect(orderText, SIGNAL(mouseReleased()), this, SLOT(orderBtnReleasedSlot()));
+
+    itemLabel = new QLabel(&pageWidget[selectPage]);
     itemLabel->setText("The clerk robot is coming...\nPlease Wait....");
     itemLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
     itemLabel->setGeometry(0, 0, static_cast<int>(pageWidth), static_cast<int>(pageHeight));
-    QFont font;
     font.setPointSize(50);
     font.setBold(true);
     itemLabel->setFont(font);
@@ -104,7 +150,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     itemLabel->hide();
 
     // 3 page
-    itemText = new QLabel(&pageWidget[2]);
+    itemText = new QLabel(&pageWidget[itemPage]);
     QFont page3LabelFont;
     page3LabelFont.setPointSize(50);
     page3LabelFont.setBold(true);
@@ -112,7 +158,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     itemText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
     itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
-    waitText = new QLabel(&pageWidget[2]);
+    waitText = new QLabel(&pageWidget[itemPage]);
     page3LabelFont.setPointSize(30);
     waitText->setFont(page3LabelFont);
     waitText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.8), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.2));
@@ -120,7 +166,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     waitText->setText("Robot is taking goods out.\nPlease wait...");
 
     // 4 page
-    thankText = new QLabel(&pageWidget[3]);
+    thankText = new QLabel(&pageWidget[thankPage]);
     QFont page4LabelFont;
     page4LabelFont.setPointSize(50);
     page4LabelFont.setBold(true);
@@ -129,24 +175,57 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     thankText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
     thankText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
-    connect(startBtn, SIGNAL(clicked()), this, SLOT(startBtnSlot()));
+    connect(startBtn, SIGNAL(mousePressed()), this, SLOT(startBtnPressedSlot()));
+    connect(startBtn, SIGNAL(mouseReleased()), this, SLOT(startBtnReleasedSlot()));
     connect(backBtn, SIGNAL(clicked()), this, SLOT(backBtnSlot()));
     connect(resetBtn, SIGNAL(clicked()), this, SLOT(resetBtnSlot()));
 
-    ui->ipAddress->setText("127.0.0.1");
-
     connectState = false;
-    client = new TcpClient(this);
-
-    connect(ui->connectBtn, SIGNAL(clicked()), this, SLOT(connectBtnSlot()));
-    connect(client->socket, SIGNAL(connected()), this, SLOT(onConnectServer()));
-    connect(client->socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
-
-    timer = new QTimer(this);
-    timer->setInterval(3000);
-    connect(timer, SIGNAL(timeout()), this, SLOT(timer_out()));
 
     systemState = 0;
+    colorIndex = -1;
+    patternIndex = -1;
+}
+
+void MainWindow::init(){
+    stackedWidget->setCurrentIndex(startPage);
+    systemState = 0;
+    colorIndex = -1;
+    patternIndex = -1;
+
+    QImage *colorImage = new QImage();
+    QPixmap *colorImageBuffer = new QPixmap();
+    QString text;
+
+    for(int i = 0; i < 6; i++){
+        if (colorImage->load(imagePath + colorIcon[i])){
+            *colorImageBuffer = QPixmap::fromImage(*colorImage);
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+        }
+        colorBtn[i]->setPixmap(*colorImageBuffer);
+        colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+
+    for(int i = 0; i < 7; i++){
+        if (colorImage->load(imagePath + patternIcon[i])){
+            *colorImageBuffer = QPixmap::fromImage(*colorImage);
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+        }
+        patternBtn[i]->setPixmap(*colorImageBuffer);
+        patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+
+    QImage *image = new QImage();
+    QPixmap *buffer = new QPixmap();
+    if (image->load(imagePath + orderIcon[2])){
+        *buffer = QPixmap::fromImage(*image);
+        *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
+    }
+    orderBtn->setPixmap(*buffer);
+    orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+    orderText->setText("Choose among these\nfavorite color & pattern");
+    orderText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 }
 
 MainWindow::~MainWindow() {
@@ -195,19 +274,46 @@ void MainWindow::readMessage()
         itemLabel->hide();
     }
     else if(systemState == 7){
-        stackedWidget->setCurrentIndex(3);
+        stackedWidget->setCurrentIndex(thankPage);
         timer->start();
     }
 }
 
 void MainWindow::timer_out(){
-    stackedWidget->setCurrentIndex(1);
     timer->stop();
+    init();
+    systemState = 7;
+    stackedWidget->setCurrentIndex(selectPage);
 }
 
-void MainWindow::startBtnSlot()
-{
-    stackedWidget->setCurrentIndex(1);
+void MainWindow::startBtnPressedSlot(){
+    QImage *startImage = new QImage();
+    QPixmap *startImageBuffer = new QPixmap();
+    if (startImage->load(imagePath + startIcon[1])){
+        *startImageBuffer = QPixmap::fromImage(*startImage);
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+    }
+    else{
+        qDebug() << "Image load Error";
+    }
+    startBtn->setPixmap(*startImageBuffer);
+    startBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+}
+
+void MainWindow::startBtnReleasedSlot(){
+    QImage *startImage = new QImage();
+    QPixmap *startImageBuffer = new QPixmap();
+    if (startImage->load(imagePath + startIcon[0])){
+        *startImageBuffer = QPixmap::fromImage(*startImage);
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+    }
+    else{
+        qDebug() << "Image load Error";
+    }
+    startBtn->setPixmap(*startImageBuffer);
+    startBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
+    stackedWidget->setCurrentIndex(selectPage);
     systemState = 1;
     pageList.push_back(stackedWidget->currentIndex());
 
@@ -218,35 +324,116 @@ void MainWindow::resetBtnSlot()
 {
     ui->centralWidget->setHidden(false);
     stackedWidget->setHidden(true);
+    colorIndex = -1;
+    patternIndex = -1;
 }
 
-void MainWindow::itemBtnSlot()
-{
+void MainWindow::colorBtnPressedSlot(){
+//    qDebug() << sender()->objectName();
+    int index = sender()->objectName().split(" ")[1].toInt() - 1;
+    QImage *image = new QImage();
+    QPixmap *buffer = new QPixmap();
+    for(int i = 0; i < 6; i++){
+        QString append_text = "";
+        if (i == index){
+            append_text = "_select";
+            colorIndex = index;
+        }
+        if (image->load(imagePath + colorIcon[i] + append_text)){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(image->width()*0.7), static_cast<int>(image->height()*0.7));
+        }
+        colorBtn[i]->setPixmap(*buffer);
+        colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+}
+
+void MainWindow::colorBtnReleasedSlot(){
+    combineItem();
+}
+
+void MainWindow::patternBtnPressedSlot(){
+//    qDebug() << sender()->objectName();
+    int index = sender()->objectName().split(" ")[1].toInt() - 1;
+    QImage *image = new QImage();
+    QPixmap *buffer = new QPixmap();
+    for(int i = 0; i < 7; i++){
+        QString append_text = "";
+        if (i == index){
+            append_text = "_select";
+            patternIndex = index;
+        }
+        if (image->load(imagePath + patternIcon[i] + append_text)){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(image->width()*0.7), static_cast<int>(image->height()*0.7));
+        }
+        patternBtn[i]->setPixmap(*buffer);
+        patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+}
+
+void MainWindow::patternBtnReleasedSlot(){
+    combineItem();
+}
+
+void MainWindow::combineItem(){
+    if (colorIndex >= 0 && patternIndex >= 0){
+        QImage *image = new QImage();
+        QPixmap *buffer = new QPixmap();
+        if (image->load(imagePath + orderIcon[0])){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
+        }
+        orderBtn->setPixmap(*buffer);
+        orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+        orderText->setText("Order goods");
+    }
+}
+
+void MainWindow::orderBtnPressedSlot(){
+    if (colorIndex >= 0 && patternIndex >= 0){
+        QImage *image = new QImage();
+        QPixmap *buffer = new QPixmap();
+        if (image->load(imagePath + orderIcon[1])){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
+        }
+        orderBtn->setPixmap(*buffer);
+        orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+}
+
+void MainWindow::orderBtnReleasedSlot(){
+    if (colorIndex >= 0 && patternIndex >= 0){
+        QImage *image = new QImage();
+        QPixmap *buffer = new QPixmap();
+        if (image->load(imagePath + orderIcon[0])){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
+        }
+        orderBtn->setPixmap(*buffer);
+        orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    }
+
     if (systemState == 4 || systemState == 7){
         systemState = 5;
-        QString objName = sender()->objectName();
-        for(int i = 0; i < 48; i++){
-            if (objName.compare(itemBtn[i]->objectName()) == 0){
-                systemState = systemState*100 + (i +1);
-                sendMessage();
-            }
+        systemState = systemState*100 + (colorIndex*col + patternIndex + 1);
+        sendMessage();
+        stackedWidget->setCurrentIndex(itemPage);
+//        itemText->setText(objName);
+        int itemIndex = colorIndex*col + patternIndex;
+//        qDebug() << itemIndex;
+        QImage *image = new QImage();
+        QPixmap *buffer = new QPixmap();
+        if (image->load(imagePath + imageIcon[itemIndex])){
+            *buffer = QPixmap::fromImage(*image);
+            *buffer = buffer->scaled(static_cast<int>(image->width()*4), static_cast<int>(image->height()*4));
         }
-        stackedWidget->setCurrentIndex(2);
-        itemText->setText(objName);
-        if (objName.compare(itemBtn[0]->objectName()) == 0){
-            QImage *image = new QImage();
-            QPixmap *buffer = new QPixmap();
-            if(image->load(imagePath))
-            {
-                *buffer = QPixmap::fromImage(*image);
-                *buffer = buffer->scaled(image->width(),image->height());
-            }
-            else
-            {
-                qDebug() << "Image load Error";
-            }
-            itemText->setPixmap(*buffer);
+        else{
+            qDebug() << "Image load Error";
         }
+        itemText->setPixmap(*buffer);
+        itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
     }
     else if (systemState == 1){
         itemLabel->setVisible(true);
@@ -255,8 +442,7 @@ void MainWindow::itemBtnSlot()
 
 void MainWindow::backBtnSlot()
 {
-    stackedWidget->setCurrentIndex(0);
-    systemState = 0;
+    init();
     sendMessage();
 }
 

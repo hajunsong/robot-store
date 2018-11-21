@@ -128,13 +128,13 @@ void TcpServer::disconnected()
             qDebug() << QString::number(tcpSocketDescriptors[i]) + " Disconnected";
             tcpSocket[i]->deleteLater();
             deleteIndex = i;
+            break;
         }
     }
-    if (deleteIndex >= 0 && deleteIndex < 3) {
-        tcpSocketDescriptors.erase(tcpSocketDescriptors.begin() + deleteIndex);
-        tcpSocket.erase(tcpSocket.begin() + deleteIndex);
-        tcpSocketID.erase(tcpSocketID.begin() + deleteIndex);
-    }
+
+    tcpSocketDescriptors.erase(tcpSocketDescriptors.begin() + deleteIndex);
+    tcpSocket.erase(tcpSocket.begin() + deleteIndex);
+//    tcpSocketID.erase(tcpSocketID.begin() + deleteIndex);
 
     if (tcpSocket.length() == 0) {
         exit(0);
