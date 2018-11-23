@@ -52,7 +52,7 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
 
 void TcpServer::readyRead()
 {
-    if (tcpSocket.length() == 3) {
+    if (tcpSocketID.length() == 3) {
         QString rxData;
         for (int i = 0; i < tcpSocket.length(); i++) {
             QByteArray Data = tcpSocket[i]->readAll();
@@ -61,7 +61,7 @@ void TcpServer::readyRead()
                 if (tcpSocketID[i] == 102){
                     int len = rxData.length();
                     if (len > 0){
-//                        qDebug() << "RX length : " + QString::number(len);
+                        //                        qDebug() << "RX length : " + QString::number(len);
                         QChar ch;
                         for(int j = 0; j < len; j++){
                             ch = rxData.at(j);
@@ -134,7 +134,7 @@ void TcpServer::disconnected()
 
     tcpSocketDescriptors.erase(tcpSocketDescriptors.begin() + deleteIndex);
     tcpSocket.erase(tcpSocket.begin() + deleteIndex);
-//    tcpSocketID.erase(tcpSocketID.begin() + deleteIndex);
+    tcpSocketID.erase(tcpSocketID.begin() + deleteIndex);
 
     if (tcpSocket.length() == 0) {
         exit(0);

@@ -4,7 +4,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setFixedSize(1280, 720);
+    this->setFixedSize(1900, 1000);
     this->setWindowTitle("UI Monitor");
 
     ui->ipAddress->setText("127.0.0.1");
@@ -36,9 +36,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     startBtn->setObjectName(QStringLiteral("startBtn"));
     QImage *startImage = new QImage();
     QPixmap *startImageBuffer = new QPixmap();
-    if (startImage->load(imagePath + startIcon[0])){
+    double scale = 0.3;
+    if (startImage->load(imageHeader + startIcon[0])){
         *startImageBuffer = QPixmap::fromImage(*startImage);
-        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*scale), static_cast<int>(startImage->height()*scale));
     }
     startBtn->setPixmap(*startImageBuffer);
     startBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
@@ -55,12 +56,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     resetBtn->hide();
 
     // 2 page
-    backBtn = new QPushButton(&pageWidget[selectPage]);
-    backBtn->setText("Quit");
-    backBtn->setFont(btnFont);
+    backBtn = new QClickLabel(&pageWidget[selectPage]);
     backBtn->setObjectName(QStringLiteral("backBtn"));
-    int backBtnWidth = 100, backBtnHeight = 50;
+    int backBtnWidth = 150, backBtnHeight = 150;
     backBtn->setGeometry(pageWidget[selectPage].width() - backBtnWidth, pageWidget[selectPage].height() - backBtnHeight, backBtnWidth, backBtnHeight);
+    QImage *backImage = new QImage();
+    QPixmap *backImageBuffer = new QPixmap();
+    if (backImage->load(imageHeader + "back")){
+        *backImageBuffer = QPixmap::fromImage(*backImage);
+        *backImageBuffer = backImageBuffer->scaled(static_cast<int>(backImage->width()*0.1), static_cast<int>(backImage->height()*0.1));
+    }
+    backBtn->setPixmap(*backImageBuffer);
+    backBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
     int pageWidth = pageWidget[selectPage].width() - backBtnWidth, pageHeight = pageWidget[selectPage].height();
     QImage *colorImage = new QImage();
@@ -75,9 +82,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         text = "Color " + QString::number(i + 1);
         colorBtn[i]->setObjectName(text);
 
-        if (colorImage->load(imagePath + colorIcon[i])){
+        if (colorImage->load(imageHeader + colorIcon[i])){
             *colorImageBuffer = QPixmap::fromImage(*colorImage);
-            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.35), static_cast<int>(colorImage->height()*0.35));
         }
         colorBtn[i]->setPixmap(*colorImageBuffer);
         colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
@@ -94,9 +101,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         text = "Pattern " + QString::number(i + 1);
         patternBtn[i]->setObjectName(text);
 
-        if (colorImage->load(imagePath + patternIcon[i])){
+        if (colorImage->load(imageHeader + patternIcon[i])){
             *colorImageBuffer = QPixmap::fromImage(*colorImage);
-            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.35), static_cast<int>(colorImage->height()*0.35));
         }
         patternBtn[i]->setPixmap(*colorImageBuffer);
         patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
@@ -105,79 +112,70 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(patternBtn[i], SIGNAL(mouseReleased()), this, SLOT(patternBtnReleasedSlot()));
     }
 
-    QWidget *layout = new QWidget(&pageWidget[selectPage]);
+    layout = new QWidget(&pageWidget[selectPage]);
     layout->setGeometry(0, pageHeight/5*4, pageWidth, pageHeight/5);
     orderBtn = new QClickLabel(layout);
-    int layoutWidth = layout->width();
-    int layoutHeight = layout->height();
-    orderBtn->setGeometry(layoutWidth/3, 0, layoutWidth/3, layoutHeight/5*4);
-    QFont font;
-    font.setPointSize(25);
-    font.setBold(true);
-    orderBtn->setFont(font);
+    layoutWidth = layout->width();
+    layoutHeight = layout->height();
+    orderBtn->setGeometry(layoutWidth/6, 0, layoutWidth/3*2, layoutHeight/5*4);
     orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
-    orderBtn->setText("");
 
     QImage *image = new QImage();
     QPixmap *buffer = new QPixmap();
-    if (image->load(imagePath + orderIcon[2])){
+    if (image->load(imageHeader + orderIcon[0])){
         *buffer = QPixmap::fromImage(*image);
         *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
     }
     orderBtn->setPixmap(*buffer);
     orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
-    orderText = new QClickLabel(layout);
-    orderText->setGeometry(layoutWidth/3, 0, layoutWidth/3, layoutHeight/5*4);
-    orderText->setFont(font);
-    orderText->setText("Choose among these\nfavorite color & pattern");
-    orderText->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    connect(orderBtn, SIGNAL(mousePressed()), this, SLOT(orderBtnPressedSlot()));
+    connect(orderBtn, SIGNAL(mouseReleased()), this, SLOT(orderBtnReleasedSlot()));
 
-    connect(orderText, SIGNAL(mousePressed()), this, SLOT(orderBtnPressedSlot()));
-    connect(orderText, SIGNAL(mouseReleased()), this, SLOT(orderBtnReleasedSlot()));
-
+    pageWidth = pageWidget[selectPage].width();
+    pageHeight = pageWidget[selectPage].height();
     itemLabel = new QLabel(&pageWidget[selectPage]);
-    itemLabel->setText("The clerk robot is coming...\nPlease Wait....");
-    itemLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
     itemLabel->setGeometry(0, 0, static_cast<int>(pageWidth), static_cast<int>(pageHeight));
-    font.setPointSize(50);
-    font.setBold(true);
-    itemLabel->setFont(font);
-    QPalette palette;
-    palette.setColor(QPalette::Window, Qt::transparent);
-    itemLabel->setAutoFillBackground(true);
-    itemLabel->setPalette(palette);
+    if (image->load(imageHeader + "clerk")){
+        *buffer = QPixmap::fromImage(*image);
+        *buffer = buffer->scaled(static_cast<int>(image->width()*0.2), static_cast<int>(image->height()*0.2));
+    }
+    itemLabel->setPixmap(*buffer);
+    itemLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
+
     itemLabel->hide();
 
     // 3 page
     itemText = new QLabel(&pageWidget[itemPage]);
-    QFont page3LabelFont;
-    page3LabelFont.setPointSize(50);
-    page3LabelFont.setBold(true);
-    itemText->setFont(page3LabelFont);
     itemText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
     itemText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
     waitText = new QLabel(&pageWidget[itemPage]);
-    page3LabelFont.setPointSize(30);
-    waitText->setFont(page3LabelFont);
     waitText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.8), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.2));
+//    waitText->setText("Robot is taking goods out.\nPlease wait...");
+    if (image->load(imageHeader + "wait")){
+        *buffer = QPixmap::fromImage(*image);
+        *buffer = buffer->scaled(static_cast<int>(image->width()*0.12), static_cast<int>(image->height()*0.12));
+    }
+    waitText->setPixmap(*buffer);
     waitText->setAlignment(Qt::AlignmentFlag::AlignCenter);
-    waitText->setText("Robot is taking goods out.\nPlease wait...");
 
     // 4 page
     thankText = new QLabel(&pageWidget[thankPage]);
-    QFont page4LabelFont;
-    page4LabelFont.setPointSize(50);
-    page4LabelFont.setBold(true);
-    thankText->setFont(page4LabelFont);
-    thankText->setText("Thank you !!\n!^^!");
-    thankText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.2), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.6));
+    thankText->setGeometry(0, 0, pageWidth, pageHeight);
+
+    if (image->load(imageHeader + "thanks")){
+        *buffer = QPixmap::fromImage(*image);
+        *buffer = buffer->scaled(static_cast<int>(image->width()*0.7), static_cast<int>(image->height()*0.7));
+    }
+    thankText->setPixmap(*buffer);
     thankText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 
     connect(startBtn, SIGNAL(mousePressed()), this, SLOT(startBtnPressedSlot()));
     connect(startBtn, SIGNAL(mouseReleased()), this, SLOT(startBtnReleasedSlot()));
-    connect(backBtn, SIGNAL(clicked()), this, SLOT(backBtnSlot()));
+//    connect(backBtn, SIGNAL(clicked()), this, SLOT(backBtnSlot()));
+    connect(backBtn, SIGNAL(mousePressed()), this, SLOT(backBtnPressedSlot()));
+    connect(backBtn, SIGNAL(mouseReleased()), this, SLOT(backBtnReleasedSlot()));
     connect(resetBtn, SIGNAL(clicked()), this, SLOT(resetBtnSlot()));
 
     connectState = false;
@@ -198,34 +196,32 @@ void MainWindow::init(){
     QString text;
 
     for(int i = 0; i < 6; i++){
-        if (colorImage->load(imagePath + colorIcon[i])){
+        if (colorImage->load(imageHeader + colorIcon[i])){
             *colorImageBuffer = QPixmap::fromImage(*colorImage);
-            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.35), static_cast<int>(colorImage->height()*0.35));
         }
         colorBtn[i]->setPixmap(*colorImageBuffer);
         colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
     }
 
     for(int i = 0; i < 7; i++){
-        if (colorImage->load(imagePath + patternIcon[i])){
+        if (colorImage->load(imageHeader + patternIcon[i])){
             *colorImageBuffer = QPixmap::fromImage(*colorImage);
-            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.7), static_cast<int>(colorImage->height()*0.7));
+            *colorImageBuffer = colorImageBuffer->scaled(static_cast<int>(colorImage->width()*0.35), static_cast<int>(colorImage->height()*0.35));
         }
         patternBtn[i]->setPixmap(*colorImageBuffer);
         patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
     }
 
+    orderBtn->setGeometry(layoutWidth/6, 0, layoutWidth/3*2, layoutHeight/5*4);
     QImage *image = new QImage();
     QPixmap *buffer = new QPixmap();
-    if (image->load(imagePath + orderIcon[2])){
+    if (image->load(imageHeader + orderIcon[0])){
         *buffer = QPixmap::fromImage(*image);
         *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
     }
     orderBtn->setPixmap(*buffer);
     orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
-
-    orderText->setText("Choose among these\nfavorite color & pattern");
-    orderText->setAlignment(Qt::AlignmentFlag::AlignCenter);
 }
 
 MainWindow::~MainWindow() {
@@ -289,9 +285,9 @@ void MainWindow::timer_out(){
 void MainWindow::startBtnPressedSlot(){
     QImage *startImage = new QImage();
     QPixmap *startImageBuffer = new QPixmap();
-    if (startImage->load(imagePath + startIcon[1])){
+    if (startImage->load(imageHeader + startIcon[1])){
         *startImageBuffer = QPixmap::fromImage(*startImage);
-        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*0.3), static_cast<int>(startImage->height()*0.3));
     }
     else{
         qDebug() << "Image load Error";
@@ -303,9 +299,9 @@ void MainWindow::startBtnPressedSlot(){
 void MainWindow::startBtnReleasedSlot(){
     QImage *startImage = new QImage();
     QPixmap *startImageBuffer = new QPixmap();
-    if (startImage->load(imagePath + startIcon[0])){
+    if (startImage->load(imageHeader + startIcon[0])){
         *startImageBuffer = QPixmap::fromImage(*startImage);
-        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*3), static_cast<int>(startImage->height()*3));
+        *startImageBuffer = startImageBuffer->scaled(static_cast<int>(startImage->width()*0.3), static_cast<int>(startImage->height()*0.3));
     }
     else{
         qDebug() << "Image load Error";
@@ -336,13 +332,20 @@ void MainWindow::colorBtnPressedSlot(){
     for(int i = 0; i < 6; i++){
         QString append_text = "";
         if (i == index){
-            append_text = "_select";
             colorIndex = index;
+
+            if (image->load(imageHeader + "m" + QString::number(i+1))){
+                *buffer = QPixmap::fromImage(*image);
+                *buffer = buffer->scaled(static_cast<int>(image->width()*0.35), static_cast<int>(image->height()*0.35));
+            }
         }
-        if (image->load(imagePath + colorIcon[i] + append_text)){
-            *buffer = QPixmap::fromImage(*image);
-            *buffer = buffer->scaled(static_cast<int>(image->width()*0.7), static_cast<int>(image->height()*0.7));
+        else{
+            if (image->load(imageHeader + colorIcon[i])){
+                *buffer = QPixmap::fromImage(*image);
+                *buffer = buffer->scaled(static_cast<int>(image->width()*0.35), static_cast<int>(image->height()*0.35));
+            }
         }
+
         colorBtn[i]->setPixmap(*buffer);
         colorBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
     }
@@ -360,12 +363,18 @@ void MainWindow::patternBtnPressedSlot(){
     for(int i = 0; i < 7; i++){
         QString append_text = "";
         if (i == index){
-            append_text = "_select";
             patternIndex = index;
+
+            if (image->load(imageHeader + "gb" + QString::number(i+1))){
+                *buffer = QPixmap::fromImage(*image);
+                *buffer = buffer->scaled(static_cast<int>(image->width()*0.35), static_cast<int>(image->height()*0.35));
+            }
         }
-        if (image->load(imagePath + patternIcon[i] + append_text)){
-            *buffer = QPixmap::fromImage(*image);
-            *buffer = buffer->scaled(static_cast<int>(image->width()*0.7), static_cast<int>(image->height()*0.7));
+        else{
+            if (image->load(imageHeader + patternIcon[i])){
+                *buffer = QPixmap::fromImage(*image);
+                *buffer = buffer->scaled(static_cast<int>(image->width()*0.35), static_cast<int>(image->height()*0.35));
+            }
         }
         patternBtn[i]->setPixmap(*buffer);
         patternBtn[i]->setAlignment(Qt::AlignmentFlag::AlignCenter);
@@ -378,15 +387,15 @@ void MainWindow::patternBtnReleasedSlot(){
 
 void MainWindow::combineItem(){
     if (colorIndex >= 0 && patternIndex >= 0){
+        orderBtn->setGeometry(layoutWidth/3, 0, layoutWidth/3, layoutHeight/5*4);
         QImage *image = new QImage();
         QPixmap *buffer = new QPixmap();
-        if (image->load(imagePath + orderIcon[0])){
+        if (image->load(imageHeader + orderIcon[1])){
             *buffer = QPixmap::fromImage(*image);
             *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
         }
         orderBtn->setPixmap(*buffer);
         orderBtn->setAlignment(Qt::AlignmentFlag::AlignCenter);
-        orderText->setText("Order goods");
     }
 }
 
@@ -394,7 +403,7 @@ void MainWindow::orderBtnPressedSlot(){
     if (colorIndex >= 0 && patternIndex >= 0){
         QImage *image = new QImage();
         QPixmap *buffer = new QPixmap();
-        if (image->load(imagePath + orderIcon[1])){
+        if (image->load(imageHeader + orderIcon[2])){
             *buffer = QPixmap::fromImage(*image);
             *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
         }
@@ -407,7 +416,7 @@ void MainWindow::orderBtnReleasedSlot(){
     if (colorIndex >= 0 && patternIndex >= 0){
         QImage *image = new QImage();
         QPixmap *buffer = new QPixmap();
-        if (image->load(imagePath + orderIcon[0])){
+        if (image->load(imageHeader + orderIcon[1])){
             *buffer = QPixmap::fromImage(*image);
             *buffer = buffer->scaled(static_cast<int>(orderBtn->width()), static_cast<int>(orderBtn->height()*0.8));
         }
@@ -425,7 +434,7 @@ void MainWindow::orderBtnReleasedSlot(){
 //        qDebug() << itemIndex;
         QImage *image = new QImage();
         QPixmap *buffer = new QPixmap();
-        if (image->load(imagePath + imageIcon[itemIndex])){
+        if (image->load(imageHeader + imageIcon[itemIndex])){
             *buffer = QPixmap::fromImage(*image);
             *buffer = buffer->scaled(static_cast<int>(image->width()*4), static_cast<int>(image->height()*4));
         }
@@ -440,8 +449,11 @@ void MainWindow::orderBtnReleasedSlot(){
     }
 }
 
-void MainWindow::backBtnSlot()
-{
+void MainWindow::backBtnPressedSlot(){
+
+}
+
+void MainWindow::backBtnReleasedSlot(){
     init();
     sendMessage();
 }
