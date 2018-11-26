@@ -53,7 +53,7 @@ void MainWindow::onConnectServer()
 {
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
-    client->socket->write(QString::number(systemState).toUtf8());
+    client->socket->write(QString::number(101).toUtf8());
     ui->connectBtn->setText("Disconnect");
 }
 

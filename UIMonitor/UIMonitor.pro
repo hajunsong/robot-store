@@ -27,11 +27,15 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    tcpclient.cpp
+    tcpclient.cpp \
+    qclicklabel.cpp \
+    slidingstackedwidget.cpp
 
 HEADERS += \
         mainwindow.h \
-    tcpclient.h
+    tcpclient.h \
+    qclicklabel.h \
+    slidingstackedwidget.h
 
 FORMS += \
         mainwindow.ui
@@ -40,3 +44,5 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES +=
