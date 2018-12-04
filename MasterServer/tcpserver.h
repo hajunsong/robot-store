@@ -11,7 +11,6 @@ class TcpServer : public QTcpServer
 public:
     explicit TcpServer(QObject *parent = nullptr);
     void startServer();
-    void setIpAddress(QString address);
 
 signals:
     void error(QTcpSocket::SocketError socketerror);
@@ -24,7 +23,6 @@ protected:
     void incomingConnection(qintptr socketDescriptor);
 
 private:
-    QString m_ipAddress;
     int systemState;
     QTcpSocket *socket;
     QVector<QTcpSocket*> tcpSocket;

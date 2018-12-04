@@ -5,13 +5,9 @@ TcpServer::TcpServer(QObject *parent) : QTcpServer(parent)
     systemState = 0;
 }
 
-void TcpServer::setIpAddress(QString address) {
-    m_ipAddress = address;
-}
-
 void TcpServer::startServer()
 {
-    if (!this->listen(QHostAddress(m_ipAddress), 9999))
+    if (!this->listen(QHostAddress::Any, 9999))
     {
         qDebug() << "Could not start server";
     }
