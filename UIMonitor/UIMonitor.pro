@@ -28,22 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     tcpclient.cpp \
-<<<<<<< HEAD
     qclicklabel.cpp \
     slidingstackedwidget.cpp
-=======
-    qclicklabel.cpp
->>>>>>> 64b8a9c310f5ef18c88bff741d700a9539a79c1c
 
 HEADERS += \
         mainwindow.h \
     tcpclient.h \
-<<<<<<< HEAD
     qclicklabel.h \
     slidingstackedwidget.h
-=======
-    qclicklabel.h
->>>>>>> 64b8a9c310f5ef18c88bff741d700a9539a79c1c
 
 FORMS += \
         mainwindow.ui

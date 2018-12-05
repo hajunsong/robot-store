@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(500, 400);
     this->setWindowTitle("Mobile Robot");
 
-    ui->ipAddress->setText("127.0.0.1");
+    ui->ipAddress->setText("192.168.100.4");
 
     connectState = false;
     client = new TcpClient(this);
@@ -53,7 +53,14 @@ void MainWindow::onConnectServer()
 {
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
-    client->socket->write(QString::number(101).toUtf8());
+
+    QByteArray txData;
+    txData.append(QByteArray::fromRawData("\x02\x05",2));
+    txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
     ui->connectBtn->setText("Disconnect");
 }
 
@@ -64,6 +71,14 @@ void MainWindow::readMessage()
 
     rxMessage = "Receive Data : " + rxData;
     ui->tcpMessage->append(rxMessage);
+
+    int len = rxData.length();
+    qDebug() << "RX length : " + QString::number(len);
+    QChar ch;
+    for(int j = 0; j < len; j++){
+        ch = rxData.at(j);
+        qDebug() << ch;
+    }
 
     systemState = rxData.toInt();
     if (systemState == 1){
@@ -92,4 +107,52 @@ void MainWindow::sendMessage()
     client->socket->write(txArray);
     QString txMessage = "Transmit Data : " + QString::number(systemState);
     ui->tcpMessage->append(txMessage);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    QByteArray txData;
+
+    txData.append(QByteArray::fromRawData("\x02\x05",2));
+    txData.append(QByteArray::fromRawData("\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    QByteArray txData;
+
+    txData.append(QByteArray::fromRawData("\x02\x05",2));
+    txData.append(QByteArray::fromRawData("\x02\x01\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
+}
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    QByteArray txData;
+
+    txData.append(QByteArray::fromRawData("\x02\x05",2));
+    txData.append(QByteArray::fromRawData("\x03\x01\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
+}
+
+void MainWindow::on_pushButton_4_clicked()
+{
+    QByteArray txData;
+
+    txData.append(QByteArray::fromRawData("\x02\x05",2));
+    txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+
+    client->socket->write(txData);
 }
