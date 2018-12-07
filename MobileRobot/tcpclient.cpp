@@ -11,7 +11,7 @@ TcpClient::~TcpClient()
 }
 
 void TcpClient::connectToServer(){
-    socket->connectToHost(ipAddress, 5003);
+    socket->connectToHost(ipAddress, 8888);
 }
 
 void TcpClient::setIpAddress(QString address){

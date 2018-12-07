@@ -7,7 +7,7 @@ TcpServer::TcpServer(QObject *parent) : QTcpServer(parent)
 
 void TcpServer::startServer()
 {
-    if (!this->listen(QHostAddress::Any, 5003))
+    if (!this->listen(QHostAddress::Any, 8888))
     {
         qDebug() << "Could not start server";
     }
@@ -41,14 +41,17 @@ void TcpServer::incomingConnection(qintptr socketDescriptor)
 
     tcpSocket.push_back(socket);
     tcpSocketDescriptors.push_back(socketDescriptor);
-    if (tcpSocket.length() == 3) {
+    if (tcpSocket.length() == 2) {
         systemState = 0;
+        for(int i = 0; i < tcpSocket.length(); i++){
+            tcpSocket[i]->write("UI monitor & Mobile robot is connected successfully");
+        }
     }
 }
 
 void TcpServer::readyRead()
 {
-    if (tcpSocketID.length() == 3) {
+    if (tcpSocketID.length() == 2) {
         QString rxData;
         for (int i = 0; i < tcpSocket.length(); i++) {
             QByteArray Data = tcpSocket[i]->readAll();
@@ -131,9 +134,5 @@ void TcpServer::disconnected()
     tcpSocketDescriptors.erase(tcpSocketDescriptors.begin() + deleteIndex);
     tcpSocket.erase(tcpSocket.begin() + deleteIndex);
     tcpSocketID.erase(tcpSocketID.begin() + deleteIndex);
-
-    if (tcpSocket.length() == 0) {
-        exit(0);
-    }
 }
 

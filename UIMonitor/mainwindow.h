@@ -48,9 +48,12 @@ public:
     ~MainWindow();
 
 public slots:
-    void connectBtnSlot();
-    void onConnectServer();
-    void readMessage();
+    void plcConnectBtnSlot();
+    void pcConnectBtnSlot();
+    void onConnectPLCServer();
+    void onConnectPCServer();
+    void readPLCMessage();
+    void readPCMessage();
     void timer_out();
 
     void startBtnPressedSlot();
@@ -62,20 +65,19 @@ public slots:
     void patternBtnReleasedSlot();
     void orderBtnPressedSlot();
     void orderBtnReleasedSlot();
-//    void backBtnPressedSlot();
-//    void backBtnReleasedSlot();
+
+    void uiStartBtnSlot();
 
 private:
     Ui::MainWindow *ui;
     void init();
-    TcpClient *client;
-    bool connectState;
+    TcpClient *plcClient, *pcClient;
+    bool connectStatePLC, connectStatePC;
     int systemState;
     void sendMessage();
     QTimer *timer;
     int colorIndex, patternIndex;
 
-//    QStackedWidget *stackedWidget;
     SlidingStackedWidget *stackedWidget;
     QWidget *pageWidget;
     // 1 poage

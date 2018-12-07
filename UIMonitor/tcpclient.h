@@ -15,6 +15,7 @@ public:
 
     QTcpSocket *socket;
     void setIpAddress(QString address);
+    void setPort(quint16 num);
 
 signals:
 public slots:
@@ -22,6 +23,7 @@ public slots:
 
 private:
     QString ipAddress;
+    quint16 portNum;
 };
 
 #endif // TCPCLIENT_H

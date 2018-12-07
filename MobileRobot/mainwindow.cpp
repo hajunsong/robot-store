@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(500, 400);
     this->setWindowTitle("Mobile Robot");
 
-    ui->ipAddress->setText("192.168.100.4");
+    ui->ipAddress->setText("127.0.0.1");
 
     connectState = false;
     client = new TcpClient(this);
@@ -54,13 +54,13 @@ void MainWindow::onConnectServer()
     ui->tcpMessage->append("Connect complete ...");
     connectState = true;
 
-    QByteArray txData;
-    txData.append(QByteArray::fromRawData("\x02\x05",2));
-    txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
-    txData.append(QByteArray::fromRawData("\x0D\x05",2));
-    qDebug() << "Transmit Data : " + txData;
+//    QByteArray txData;
+//    txData.append(QByteArray::fromRawData("\x02\x05",2));
+//    txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+//    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+//    qDebug() << "Transmit Data : " + txData;
+//    client->socket->write(txData);
 
-    client->socket->write(txData);
     ui->connectBtn->setText("Disconnect");
 }
 
@@ -74,10 +74,11 @@ void MainWindow::readMessage()
 
     int len = rxData.length();
     qDebug() << "RX length : " + QString::number(len);
+    qDebug() << rxData;
     QChar ch;
     for(int j = 0; j < len; j++){
         ch = rxData.at(j);
-        qDebug() << ch;
+//        qDebug() << ch;
     }
 
     systemState = rxData.toInt();
@@ -102,11 +103,22 @@ void MainWindow::moving(){
 
 void MainWindow::sendMessage()
 {
-    QByteArray txArray;
-    txArray.setNum(systemState);
-    client->socket->write(txArray);
-    QString txMessage = "Transmit Data : " + QString::number(systemState);
-    ui->tcpMessage->append(txMessage);
+//    QString txData = QString::number(systemState);
+//    client->socket->write("txData.toUtf8()");
+//    QString txMessage = "Transmit Data : " + txData;
+//    ui->tcpMessage->append(txMessage);
+    int productNumber = systemState;
+    QByteArray txData;
+    txData.append(QByteArray::fromRawData("\x02\x05", 2));
+    if (productNumber < 16){
+        txData.append(static_cast<char>(0x00));
+    }
+    QString result = QString::number(productNumber, 10);
+    txData.append(result.toUtf8());
+    txData.append(QByteArray::fromRawData("\x03\x05\x03\x05\x03\x05\x03\x05", 8));
+    txData.append(QByteArray::fromRawData("\x0D\x05",2));
+    qDebug() << "Transmit Data : " + txData;
+    client->socket->write(txData);
 }
 
 void MainWindow::on_pushButton_clicked()

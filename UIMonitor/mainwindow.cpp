@@ -7,13 +7,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(1900, 1000);
     this->setWindowTitle("UI Monitor");
 
-    ui->ipAddress->setText("127.0.0.1");
+    ui->plcIP->setText("127.0.0.1");
+    ui->pcIP->setText("127.0.0.1");
+    ui->plcPort->setText("9999");
+    ui->pcPort->setText("8888");
 
-    client = new TcpClient(this);
+    plcClient = new TcpClient(this);
+    pcClient = new TcpClient(this);
 
-    connect(ui->connectBtn, SIGNAL(clicked()), this, SLOT(connectBtnSlot()));
-    connect(client->socket, SIGNAL(connected()), this, SLOT(onConnectServer()));
-    connect(client->socket, SIGNAL(readyRead()), this, SLOT(readMessage()));
+    connect(ui->plcConnectBtn, SIGNAL(clicked()), this, SLOT(plcConnectBtnSlot()));
+    connect(plcClient->socket, SIGNAL(connected()), this, SLOT(onConnectPLCServer()));
+    connect(plcClient->socket, SIGNAL(readyRead()), this, SLOT(readPLCMessage()));
+
+    connect(ui->pcConnectBtn, SIGNAL(clicked()), this, SLOT(pcConnectBtnSlot()));
+    connect(pcClient->socket, SIGNAL(connected()), this, SLOT(onConnectPCServer()));
+    connect(pcClient->socket, SIGNAL(readyRead()), this, SLOT(readPCMessage()));
+
+    connect(ui->uiStartBtn, SIGNAL(clicked()), this, SLOT(uiStartBtnSlot()));
+    ui->uiStartBtn->setDisabled(true);
 
     timer = new QTimer(this);
     timer->setInterval(3000);
@@ -51,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     resetBtn->setObjectName(QStringLiteral("resetBtn"));
     resetBtn->hide();
 
+    // 2 Page
     int pageWidth = pageWidget[selectPage].width(), pageHeight = pageWidget[selectPage].height();
     QImage *colorImage = new QImage();
     QPixmap *colorImageBuffer = new QPixmap();
@@ -134,7 +146,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     waitText = new QLabel(&pageWidget[itemPage]);
     waitText->setGeometry(static_cast<int>(pageWidth*0.2), static_cast<int>(pageHeight*0.8), static_cast<int>(pageWidth*0.6), static_cast<int>(pageHeight*0.2));
-//    waitText->setText("Robot is taking goods out.\nPlease wait...");
     if (image->load(imageHeader + waitIcon)){
         *buffer = QPixmap::fromImage(*image);
         *buffer = buffer->scaled(static_cast<int>(image->width()*0.12), static_cast<int>(image->height()*0.12));
@@ -157,7 +168,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(startBtn, SIGNAL(mouseReleased()), this, SLOT(startBtnReleasedSlot()));
     connect(resetBtn, SIGNAL(clicked()), this, SLOT(resetBtnSlot()));
 
-    connectState = false;
+    connectStatePLC = false;
+    connectStatePC = false;
 
     systemState = 0;
     colorIndex = -1;
@@ -210,38 +222,65 @@ MainWindow::~MainWindow() {
     delete stackedWidget;
 }
 
-void MainWindow::connectBtnSlot()
+void MainWindow::plcConnectBtnSlot()
 {
-    if (connectState) {
-        client->socket->close();
-        ui->tcpMessage->append("Close ...");
-        connectState = false;
-        ui->connectBtn->setText("Connect");
+    if (connectStatePLC) {
+        plcClient->socket->close();
+        ui->tcpMessage->append("PLC Server Close ...");
+        connectStatePLC = false;
+        ui->plcConnectBtn->setText("Connect");
+        ui->uiStartBtn->setDisabled(true);
     }
     else {
-        client->setIpAddress(ui->ipAddress->text());
-        emit client->connectToServer();
+        plcClient->setIpAddress(ui->plcIP->text());
+        plcClient->setPort(ui->plcPort->text().toUShort());
+        emit plcClient->connectToServer();
     }
 }
 
-void MainWindow::onConnectServer()
+void MainWindow::pcConnectBtnSlot()
 {
-    ui->tcpMessage->append("Connect complete ...");
-    connectState = true;
-    client->socket->write(QString::number(100).toUtf8());
-    ui->connectBtn->setText("Disconnect");
-
-    ui->centralWidget->hide();
-    stackedWidget->setHidden(false);
+    if (connectStatePC) {
+        pcClient->socket->close();
+        ui->tcpMessage->append("PC Server Close ...");
+        connectStatePC = false;
+        ui->pcConnectBtn->setText("Connect");
+        ui->uiStartBtn->setDisabled(true);
+    }
+    else {
+        pcClient->setIpAddress(ui->pcIP->text());
+        pcClient->setPort(ui->pcPort->text().toUShort());
+        emit pcClient->connectToServer();
+    }
 }
 
-void MainWindow::readMessage()
+void MainWindow::onConnectPLCServer()
+{
+    ui->tcpMessage->append("PLC Server Connect complete ...");
+    connectStatePLC = true;
+    ui->plcConnectBtn->setText("Disconnect");
+
+    if(connectStatePLC & connectStatePC)
+        ui->uiStartBtn->setEnabled(true);
+}
+
+void MainWindow::onConnectPCServer()
+{
+    ui->tcpMessage->append("PC Server Connect complete ...");
+    connectStatePC = true;
+    ui->pcConnectBtn->setText("Disconnect");
+
+    if(connectStatePLC & connectStatePC)
+        ui->uiStartBtn->setEnabled(true);
+}
+
+void MainWindow::readPLCMessage()
 {
     QString rxMessage;
-    QString rxData = client->socket->readAll();
+    QString rxData = plcClient->socket->readAll();
     systemState = rxData.toInt();
 
-    rxMessage = "Receive Data : " + rxData;
+    rxMessage = "Receive Data(From PLC) : " + rxData;
     ui->tcpMessage->append(rxMessage);
 
     if (systemState == 3) {
@@ -254,6 +293,32 @@ void MainWindow::readMessage()
         stackedWidget->slideInIdx(thankPage, stackedWidget->BOTTOM2TOP);
         timer->start();
     }
+}
+
+void MainWindow::readPCMessage()
+{
+    QString rxMessage;
+    QString rxData = pcClient->socket->readAll();
+    systemState = rxData.toInt();
+
+    rxMessage = "Receive Data(From PC) : " + rxData;
+    ui->tcpMessage->append(rxMessage);
+
+    if (systemState == 3) {
+        stackedWidget->setVisible(true);
+        systemState = 4;
+        itemLabel->hide();
+    }
+    else if(systemState == 7){
+//        stackedWidget->setCurrentIndex(thankPage);
+        stackedWidget->slideInIdx(thankPage, stackedWidget->BOTTOM2TOP);
+        timer->start();
+    }
+}
+
+void MainWindow::uiStartBtnSlot(){
+    ui->centralWidget->hide();
+    stackedWidget->setHidden(false);
 }
 
 void MainWindow::timer_out(){
@@ -440,7 +505,7 @@ void MainWindow::orderBtnReleasedSlot(){
 void MainWindow::sendMessage()
 {
     QString txData = QString::number(systemState);
-    client->socket->write(txData.toUtf8());
+    pcClient->socket->write(txData.toUtf8());
     QString txMessage = "Transmit Data : " + txData;
     ui->tcpMessage->append(txMessage);
 }
